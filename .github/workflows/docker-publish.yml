@@ -15,10 +15,36 @@ permissions:
   packages: read
   contents: read
 
-jobs:
-  build-push:
-    runs-on: ubuntu-latest
+concurrency: 
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
+jobs:
+  pre_job:
+    runs-on: ubuntu-20.04
+    name: pre_job
+    steps:
+      - name: pre_job Set up Docker Buildx
+        if: ${{ runner.os == 'macOS' || runner.os == 'Linux' || runner.os != 'Windows' }}
+        id: buildx
+        uses: docker/setup-buildx-action@v2.0.0
+      - name: pre_job CI Build
+        id: docker_build
+        uses: docker/build-push-action@v3.0.0
+        with:
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: "BASE_IMAGE=ubuntu:20.04"
+
+  build-push:
+    ## name: build-${{ matrix.matrixjobname }}
+    needs: pre_job
+    runs-on: ${{ matrix.host-os }}
+    ###  continue-on-error: ${{ matrix.experimental }}
+    # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
+    # https://github.com/apache/commons-io/blob/5911ca64d08c110bc7a612dbef2f278d5dd2a9ab/.github/workflows/maven.yml#L23
     strategy:
 #      fail-fast: true
       fail-fast: false
@@ -140,6 +166,119 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+#######################################################
+      - name: Generate hash of matrix.platform-args AND matrix.build-args
+        shell: bash
+        env:
+          MATRIX_TAG_ARGS_ENABLE: ${{matrix.tag-args-enable}}
+          MATRIX_TAG_ARGS_DISABLE: ${{matrix.tag-args-disable}}
+        run: |
+          set -vx
+          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#echoing-command-outputs
+          #echo '::echo::on'
+          echo "[debug] github.sha is '${{ github.sha }}'"
+          short_sha=$(echo "${{ github.sha }}" | cut -c1-8 )
+          echo "[debug] Generated short_sha is '${short_sha}'"
+          echo "::set-output name=short_sha::$short_sha"
+          #
+          echo "[debug] matrix.platform-args is '${{ matrix.platform-args }}'"
+          ### hash=$(echo "${{ matrix.platform-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | md5sum | cut -c1-15 )
+          hash=$(echo "${{ matrix.platform-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | shasum -a1 | cut -c1-8 )
+          echo "[debug] Generated hash is '${hash}'"
+          echo "::set-output name=hash::$hash"
+          #
+          echo "[debug] matrix.platform-args is '${{ matrix.platform-args }}'"
+          ### hash=$(echo "${{ matrix.platform-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | md5sum | cut -c1-15 )
+          pavar=$(echo "${{ matrix.platform-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | sed -e 's/^.*linux\//.L/g' -e 's/^.*windows\//.W/g' -e 's/^.*darwin\//.D/g' | tr -d '\n' | sed -e 's/[^0-9,a-z,A-Z,.]*//g' )
+          echo "[debug] Generated pavar is '${pavar}'"
+          echo "::set-output name=pavar::$pavar"
+          #
+          echo "[debug] matrix.build-args is '${{ matrix.build-args }}'"
+          ### bahash=$(echo "${{ matrix.build-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | md5sum | cut -c1-15 )
+          bahash=$(echo "${{ matrix.build-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | shasum -a1 | cut -c1-8 )
+          echo "[debug] Generated bahash is '${bahash}'"
+          echo "::set-output name=bahash::$bahash"
+          #
+          echo "[debug] matrix.build-args is '${{ matrix.build-args }}'"
+          bavar=$(echo "${{ matrix.build-args }}" | sed -e 's/[;, ]/\n/g' | sort -u | sed -e 's/^.*=/./g' | tr -d '\n' | sed -e 's/[^0-9,a-z,A-Z,.]*//g' )
+          echo "[debug] Generated bavar is '${bavar}'"
+          echo "::set-output name=bavar::$bavar"
+          #
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+          echo "::set-output name=fulldate::$(/bin/date -u "+%Y%m%dT%H%M%S")"
+          #${{ steps.generate_matrix_platform-args.outputs.hash }}
+          #echo '::echo::off'
+        id: generate_matrix_platform-args
+#################
+      - name: Cache Docker layers
+        id: buildx-cache
+        uses: actions/cache@v3.0.4
+        with:
+          path: /tmp/.buildx-cache
+          # key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.run_id }}
+          # ${{ hashFiles('**/go.sum') }}-
+          # key: ${{ runner.os }}-buildx-HASH${{ steps.generate_matrix_platform-args.outputs.hash }}-CV${{ inputs.cache-version }}-SHA${{ github.sha }}-RUN${{ github.run_id }}-DATE${{ steps.generate_matrix_platform-args.outputs.fulldate }}
+          # key: ${{ runner.os }}-buildx-PAHASH${{ steps.generate_matrix_platform-args.outputs.hash }}-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-RUN${{ github.run_id }}-
+          key: ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-RUN${{ github.run_id }}-
+          # key: ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-
+          restore-keys: |
+            # ${{ runner.os }}-buildx-HASH${{ steps.generate_matrix_platform-args.outputs.hash }}-CV${{ inputs.cache-version }}-SHA${{ github.sha }}-RUN${{ github.run_id }}-DATE${{ steps.generate_matrix_platform-args.outputs.fulldate }}
+            # ${{ runner.os }}-buildx-PAHASH${{ steps.generate_matrix_platform-args.outputs.hash }}-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-RUN${{ github.run_id }}-
+            ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-RUN${{ github.run_id }}-
+            ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-
+            ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-
+            ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-
+            # ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.run_id }}
+            # ${{ runner.os }}-buildx-${{ github.sha }}-
+            # ${{ runner.os }}-buildx-
+      # START workaround for --cache-from fails if cache does not already exist
+      - name: remove Docker cache
+        if: ${{ github.event.inputs.clear-docker-cache }}
+        run: rm -fr /tmp/.buildx-cache /tmp/.buildx-cache-old /tmp/.buildx-cache-new
+      - name: Docker cache Fix 1/2
+      # see
+      # https://github.com/actions/cache/issues/485
+      # https://github.com/shivammathur/cache-extensions/issues/22
+      # see https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/10365/files#diff-bc668a2c9f2299cef15b222055b4b4d5311646caec2e7610e540cee18ae9b948
+        ##if: steps.buildx-cache.outputs.cache-hit != 'true'
+        ##run: echo "START Docker cache Fix" || echo "FROM scratch" | docker buildx build - --cache-to type=local,dest=/tmp/.buildx-cache,mode=max
+        #run: |
+        #  [[ -f /tmp/.buildx-cache/index.json ]] || $( echo 'START Docker cache Fix' ; echo "FROM scratch" | docker buildx build - --cache-to type=local,dest=/tmp/.buildx-cache,mode=max ; ) ;
+        #run: |
+        #  [[ -f /tmp/.buildx-cache/index.json ]] && echo "Skip run of Docker cache Fix" || echo "FROM alpine" | docker buildx build - --cache-to type=local,dest=/tmp/.buildx-cache,mode=max
+        run: |
+          [ -f /tmp/.buildx-cache/index.json ] || printf "FROM scratch\n" | docker buildx build - --cache-to type=local,dest=/tmp/.buildx-cache,mode=max
+          mv /tmp/.buildx-cache /tmp/.buildx-cache-old
+        shell: bash          
+      - name: hash matrix.platform-args
+        run: |
+          echo ${{ matrix.platform-args }}
+          echo ${{ matrix.platform-args }} | sed -e 's/[;,]/\n/g' | sort -u > /tmp/.buildx-cache/matrixplatformargs
+          sha1sum /tmp/.buildx-cache/matrixplatformargs
+          shasum -a1 /tmp/.buildx-cache/matrixplatformargs
+          cat /tmp/.buildx-cache/matrixplatformargs
+      # Temp fix1
+      #    https://github.com/docker/buildx/issues/206
+#      - name: cache Fix, if cache does not already exist, create Dockerfile.dummy
+#        run: echo "FROM alpine" > Dockerfile.dummy
+#      - uses: docker/build-push-action@v2
+#        with:
+#          context: .
+#          file: Dockerfile.dummy
+#          platforms: |
+#            linux/amd64
+#          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+#      - name: cache Fix, Move cache
+#        run: |
+#          set -vx
+#          # delete cache dir if index.json not exist
+#          #[[ -f /tmp/.buildx-cache/index.json ]] || rm -rf /tmp/.buildx-cache
+#          # move dummy docker cache over if index.json not exist
+#          [[ -f /tmp/.buildx-cache/index.json ]] || mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+#      # END workaround for --cache-from fails if cache does not already exist
+#######################################################
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
