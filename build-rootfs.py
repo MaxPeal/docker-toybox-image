@@ -8,6 +8,16 @@ os.makedirs('rootfs/sbin')
 os.makedirs('rootfs/usr/bin')
 os.makedirs('rootfs/usr/sbin')
 
+print(platform.architecture())
+print(platform.machine())
+print(platform.node())
+print(platform.platform())
+print(platform.processor())
+print(platform.system())
+#print(platform.system_alias())
+print(platform.uname())
+print(platform.freedesktop_os_release())
+
 toybox_arch_mapping = {
     'aarch64': 'aarch64',
     'armv7l': 'armv7l',
@@ -16,6 +26,7 @@ toybox_arch_mapping = {
     'armv4l': 'armv4l',
 #    'armv7l': 'armv4l',
     'mips64le': 'mips64le',
+    'mips64': 'mips64le',
     'ppc64le': 'powerpc64le',
     'riscv64': 'riscv64',
     's390x': 's390x',
