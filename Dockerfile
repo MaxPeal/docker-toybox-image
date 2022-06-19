@@ -1,4 +1,7 @@
-FROM python:3 AS BUILDER
+#FROM python:3 AS BUILDER
+FROM debian:unstable AS BUILDER
+
+RUN apt-get update && apt-get --yes install python3-minimal python-is-python3
 
 WORKDIR /usr/src/app
 
