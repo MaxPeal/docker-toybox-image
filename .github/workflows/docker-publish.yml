@@ -243,6 +243,7 @@ jobs:
             ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-SHA${{ steps.generate_matrix_platform-args.outputs.short_sha }}-
             ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-PA${{ steps.generate_matrix_platform-args.outputs.pavar }}-
             ${{ runner.os }}-buildx-BA${{ steps.generate_matrix_platform-args.outputs.bavar }}-
+            ${{ runner.os }}-buildx-
             # ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.run_id }}
             # ${{ runner.os }}-buildx-${{ github.sha }}-
             # ${{ runner.os }}-buildx-
