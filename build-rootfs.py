@@ -10,6 +10,11 @@ os.makedirs('rootfs/usr/sbin')
 
 toybox_arch_mapping = {
     'aarch64': 'aarch64',
+    'armv7l': 'armv7l',
+    'armv6l': 'armv6l',
+    'armv5l': 'armv5l',
+    'armv4l': 'armv4l',
+#    'armv7l': 'armv4l',
     'mips64le': 'mips64le',
     'ppc64le': 'powerpc64le',
     'riscv64': 'riscv64',
