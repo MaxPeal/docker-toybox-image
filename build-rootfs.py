@@ -25,7 +25,7 @@ toybox_arch_mapping = {
     'armv5l': 'armv5l',
     'armv4l': 'armv4l',
 #    'armv7l': 'armv4l',
-    'mips64le': 'mips64le',
+#    'mips64le': 'mips64le',
     'mips64': 'mips64le',
     'ppc64le': 'powerpc64le',
     'riscv64': 'riscv64',
