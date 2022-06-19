@@ -8,7 +8,18 @@ os.makedirs('rootfs/sbin')
 os.makedirs('rootfs/usr/bin')
 os.makedirs('rootfs/usr/sbin')
 
-with urllib.request.urlopen(f'http://landley.net/toybox/bin/toybox-{platform.machine()}') as f:
+toybox_arch_mapping = {
+    'x86_64': 'amd64',
+    'aarch64': 'aarch64'
+    'mips64le': 'mips64le'
+    'i386': 'i486'
+#    'ppc64': 'powerpc64',
+    'ppc64le': 'powerpc64le',
+    'riscv64': 'riscv64',
+    's390x': 's390x',
+}
+
+with urllib.request.urlopen(f'http://landley.net/toybox/bin/toybox-{toybox_arch_mapping[platform.machine()]}') as f:
     toybox = f.read()
     with open('rootfs/bin/toybox', 'wb') as file:
         file.write(toybox)
