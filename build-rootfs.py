@@ -9,14 +9,13 @@ os.makedirs('rootfs/usr/bin')
 os.makedirs('rootfs/usr/sbin')
 
 toybox_arch_mapping = {
-    'x86_64': 'amd64',
-    'aarch64': 'aarch64'
-    'mips64le': 'mips64le'
-    'i386': 'i486'
-#    'ppc64': 'powerpc64',
+    'aarch64': 'aarch64',
+    'mips64le': 'mips64le',
     'ppc64le': 'powerpc64le',
     'riscv64': 'riscv64',
     's390x': 's390x',
+    'i386': 'i486',
+    'x86_64': 'x86_64'
 }
 
 with urllib.request.urlopen(f'http://landley.net/toybox/bin/toybox-{toybox_arch_mapping[platform.machine()]}') as f:
