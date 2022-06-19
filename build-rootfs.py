@@ -34,6 +34,8 @@ toybox_arch_mapping = {
     'x86_64': 'x86_64'
 }
 
+print(http://landley.net/toybox/bin/toybox-{toybox_arch_mapping[platform.machine()]})
+
 with urllib.request.urlopen(f'http://landley.net/toybox/bin/toybox-{toybox_arch_mapping[platform.machine()]}') as f:
     toybox = f.read()
     with open('rootfs/bin/toybox', 'wb') as file:
