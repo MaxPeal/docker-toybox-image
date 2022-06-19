@@ -158,6 +158,8 @@ jobs:
             tag-args-disable: false
             #build-args: 'BASE_IMAGE=ubuntu:20.04'
             build-args: 'BASE_IMAGE='
+            setup-qemu: false
+            setup-buildx: true
             #release: false
             #release: ${{ github.event_name != 'pull_request' }} # importent to catch a rogue like PR
             release: true
