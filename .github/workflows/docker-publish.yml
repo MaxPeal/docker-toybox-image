@@ -263,13 +263,13 @@ jobs:
           [ -f /tmp/.buildx-cache/index.json ] || printf "FROM scratch\n" | docker buildx build - --cache-to type=local,dest=/tmp/.buildx-cache,mode=max
           mv /tmp/.buildx-cache /tmp/.buildx-cache-old
         shell: bash          
-      - name: hash matrix.platform-args
-        run: |
-          echo ${{ matrix.platform-args }}
-          echo ${{ matrix.platform-args }} | sed -e 's/[;,]/\n/g' | sort -u > /tmp/.buildx-cache/matrixplatformargs
-          sha1sum /tmp/.buildx-cache/matrixplatformargs
-          shasum -a1 /tmp/.buildx-cache/matrixplatformargs
-          cat /tmp/.buildx-cache/matrixplatformargs
+#      - name: hash matrix.platform-args
+#        run: |
+#          echo ${{ matrix.platform-args }}
+#          echo ${{ matrix.platform-args }} | sed -e 's/[;,]/\n/g' | sort -u > /tmp/.buildx-cache/matrixplatformargs
+#          sha1sum /tmp/.buildx-cache/matrixplatformargs
+#          shasum -a1 /tmp/.buildx-cache/matrixplatformargs
+#          cat /tmp/.buildx-cache/matrixplatformargs
       # Temp fix1
       #    https://github.com/docker/buildx/issues/206
 #      - name: cache Fix, if cache does not already exist, create Dockerfile.dummy
