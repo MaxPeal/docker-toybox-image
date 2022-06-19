@@ -84,6 +84,8 @@ jobs:
         tag-sha: [FALSE]
         tag-args-enable: [FALSE]
         tag-args-disable: [TRUE]
+        setup-qemu: [TRUE]
+        setup-buildx: [TRUE]
         # tag-args-enable: 
         #  - false
         experimental: [true]
@@ -166,6 +168,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        if: ${{ matrix.setup-qemu }}
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        if: ${{ matrix.setup-buildx }}
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
 
 #######################################################
       - name: Generate hash of matrix.platform-args AND matrix.build-args
@@ -278,14 +290,6 @@ jobs:
 #          [[ -f /tmp/.buildx-cache/index.json ]] || mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 #      # END workaround for --cache-from fails if cache does not already exist
 #######################################################
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Cut "docker-" form github.repository and convert to lowercase # use with ${{ steps.cut.outputs.repo }}
         id: cut
