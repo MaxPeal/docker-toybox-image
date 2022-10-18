@@ -306,7 +306,7 @@ jobs:
         shell: bash
 
       - name: docker/metadata-action
-        uses: docker/metadata-action@v4.0.1
+        uses: docker/metadata-action@v4.1.1
         # continue-on-error: true
         id: meta
         with:
